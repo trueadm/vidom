@@ -6,10 +6,10 @@ import merge from '../utils/merge';
 export default createComponent({
     onInit() {
         this.onInput = e => {
-            let attrs = this.getAttrs();
+            const { onInput, onChange } = this.getAttrs();
 
-            attrs.onInput && attrs.onInput(e);
-            attrs.onChange && attrs.onChange(e);
+            onInput && onInput(e);
+            onChange && onChange(e);
 
             applyBatch();
 
@@ -22,12 +22,13 @@ export default createComponent({
                 }
             }
         };
+
+        this._controlAddAttrs = { onInput : this.onInput, onChange : null };
     },
 
     onRender(attrs) {
         return this.setDomRef(
             'control',
-            new TagNode('textarea')
-                .attrs(merge(attrs, { onInput : this.onInput, onChange : null })));
+            new TagNode('textarea').attrs(merge(attrs, this._controlAddAttrs)));
     }
 });

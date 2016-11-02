@@ -7,37 +7,19 @@ const namedRadioInputs = {};
 
 export default createComponent({
     onInit() {
-        this.onInput = e => {
-            let attrs = this.getAttrs();
-
-            attrs.onInput && attrs.onInput(e);
-            attrs.onChange && attrs.onChange(e);
-
-            applyBatch();
-
-            if(this.isMounted()) {
-                const control = this.getDomRef('control'),
-                    { value } = this.getAttrs(); // attrs could be changed during applyBatch()
-
-                if(typeof value !== 'undefined' && control.value !== value) {
-                    control.value = value;
-                }
-            }
-        };
-
         this.onChange = e => {
-            const attrs = this.getAttrs(),
+            const { onChange } = this.getAttrs(),
                 control = this.getDomRef('control');
 
-            attrs.onChange && attrs.onChange(e);
+            onChange && onChange(e);
 
             applyBatch();
 
             if(this.isMounted()) {
-                const { name, type, checked } = this.getAttrs(); // attrs could be changed during applyBatch()
+                const { name, checked } = this.getAttrs(); // attrs could be changed during applyBatch()
 
                 if(typeof checked !== 'undefined' && control.checked !== checked) {
-                    if(type === 'radio' && name) {
+                    if(name) {
                         const radioInputs = namedRadioInputs[name],
                             len = radioInputs.length;
                         let i = 0,
@@ -63,62 +45,38 @@ export default createComponent({
                 }
             }
         };
+
+        this._controlAddAttrs = { type : 'radio', onChange : this.onChange };
     },
 
     onRender(attrs) {
-        let controlAttrs;
-
-        if(attrs.type === 'file') {
-            controlAttrs = attrs;
-        }
-        else {
-            controlAttrs = merge(attrs, { onChange : null });
-
-            if(attrs.type === 'checkbox' || attrs.type === 'radio') {
-                controlAttrs.onChange = this.onChange;
-            }
-            else {
-                controlAttrs.onInput = this.onInput;
-            }
-        }
-
         return this.setDomRef(
             'control',
-            new TagNode('input').attrs(controlAttrs));
+            new TagNode('input').attrs(merge(attrs, this._controlAddAttrs)));
     },
 
-    onMount({ type, name }) {
-        if(type === 'radio' && name) {
+    onMount({ name }) {
+        if(name) {
             addToNamedRadioInputs(name, this);
         }
     },
 
-    onUpdate({ type, name }, { type : prevType, name : prevName }) {
-        if(prevType === 'radio') {
-            if(type !== prevType) {
-                if(prevName) {
-                    removeFromNamedRadioInputs(prevName, this);
-                }
+    onUpdate({ name }, { name : prevName }) {
+        if(name !== prevName) {
+            if(prevName) {
+                removeFromNamedRadioInputs(prevName, this);
             }
-            else if(name !== prevName) {
-                if(prevName) {
-                    removeFromNamedRadioInputs(prevName, this);
-                }
 
-                if(name) {
-                    addToNamedRadioInputs(name, this);
-                }
+            if(name) {
+                addToNamedRadioInputs(name, this);
             }
-        }
-        else if(type === 'radio' && name) {
-            addToNamedRadioInputs(name, this);
         }
     },
 
     onUnmount() {
-        const { type, name } = this.getAttrs();
+        const { name } = this.getAttrs();
 
-        if(type === 'radio' && name) {
+        if(name) {
             removeFromNamedRadioInputs(name, this);
         }
     }
@@ -146,5 +104,9 @@ function removeFromNamedRadioInputs(name, input) {
         }
 
         i++;
+    }
+
+    if(!radioInputs.length) {
+        delete namedRadioInputs[name];
     }
 }

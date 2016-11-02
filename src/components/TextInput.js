@@ -5,9 +5,10 @@ import merge from '../utils/merge';
 
 export default createComponent({
     onInit() {
-        this.onChange = e => {
-            const { onChange } = this.getAttrs();
+        this.onInput = e => {
+            const { onInput, onChange } = this.getAttrs();
 
+            onInput && onInput(e);
             onChange && onChange(e);
 
             applyBatch();
@@ -22,14 +23,12 @@ export default createComponent({
             }
         };
 
-        this._controlAddAttrs = { onChange : this.onChange };
+        this._controlAddAttrs = { onInput : this.onInput, onChange : null };
     },
 
-    onRender(attrs, children) {
+    onRender(attrs) {
         return this.setDomRef(
             'control',
-            new TagNode('select')
-                .attrs(merge(attrs, this._controlAddAttrs))
-                .children(children));
+            new TagNode('input').attrs(merge(attrs, this._controlAddAttrs)));
     }
 });
